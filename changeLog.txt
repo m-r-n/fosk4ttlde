@@ -1,0 +1,11 @@
+============================================
+		F.O.S.K.
+	Lua-based PSP Keyboard Plugin
+	    mrn at post dot cz
+============================================
+
+Ver. 0.1 .. Feb 7, 2006
+ - qwertz + QWERTZ + Nums + Chars
+ - tested with Lua Player 0.15 and TTLDE 2.1
+
+

@@ -1,0 +1,236 @@
+--[[
+///////////////////////////////////////////////////////////////////////////////
+                F.O.S.K.
+  The Fast On-Screen Keyboard plugin
+          mrn at post dot cz
+///////////////////////////////////////////////////////////////////////////////
+]]--
+
+require("pad.lc")
+
+function drawRectM(x0, y0, w, h, Ccolor)
+  screen:drawLine(x0, y0, x0+w, y0, Ccolor)
+  screen:drawLine(x0, y0, x0, y0+h, Ccolor)
+  screen:drawLine(x0+w, y0, x0+w, y0+h, Ccolor)
+  screen:drawLine(x0+w, y0+h, x0, y0+h, Ccolor)
+end
+
+-------------------------------------------------------------------------------
+Osk = {
+  BgColor  = Color.new(180,180,180)
+, FgColor  = Color.new(  0,  0,  0)
+, foreground  = Color.new(  0,  0,  0)
+, color  = Color.new(  0,  0,  0)
+, creme = Color.new(230, 230, 200)
+, red   = Color.new(255, 0, 0)
+, green = Color.new(0, 255, 0)
+, blue  = Color.new(80, 80, 255)
+, blue2  = Color.new(80, 80, 105)
+, white = Color.new(255, 255, 255)
+, black = Color.new(0, 0, 0)
+, SelColor = Color.new(200,255,200)
+, Palette = {
+    [false] = {
+      [0]="1234567890"
+    , [1]="qwertyuiop"
+    , [2]="-asdfghjkl"
+    , [3]="(zxc)vbnm~"
+    , [4]="\b, .\\/;f='"
+    }
+  , [true] = {
+      [0]="!@#$%^&*[]"
+    , [1]="QWERTYUIOP"
+    , [2]="_ASDFGHJKL"
+    , [3]="{ZXC}VBNM`"
+    , [4]="\n<\t>|?:\t+\""
+    }
+  }
+
+, keys = {
+  [false] = {
+   { "q","w","e","r","t","z","u","i","o",  "7","8","9",  "+","-","=", "~","`","'", "\\","#","|"},
+   { "a","s","d","f","g","h","j","k","l",  "4","5","6",  "/","*","%", "^","?","!", "\/","@","\""},
+   { "y","x","c","v","b","n","m","p"," ",  "1","2","3",  "0",".",":", ";",",","_", "&","$","\n",},
+  },
+  [true] = {
+  { "Q","W","E","R","T","Z","U","I","O",  "7","8","9",  "+","-","=", "~","`","'", "(",")","<"},
+  { "A","S","D","F","G","H","J","K","L",  "4","5","6",  "/","*","%", "^","?","!", "[","]",">"},
+  { "Y","X","C","V","B","N","M","P"," ",  "1","2","3",  "0",".",":", ";",",","_", "{","}","\n"},
+  }
+ }
+
+,firstkey=0
+,x=2
+,y=2
+,value =""
+,Shift = false
+}
+
+-------------------------------------------------------------------------------
+function Osk.new()
+  local c = setmetatable( {
+      InX = 4
+    , InY = 2
+    , Char = nil
+    , First = true
+  }, { __index = Osk } )
+  return c
+end
+
+-------------------------------------------------------------------------------
+function Osk:Draw(x, y, s)
+  s = s or screen
+  
+  -- fosk background
+  s:fillRect(118, 236, 247, 37, self.blue)
+
+  --screen:drawLine(1, ig, 480, ig, red)
+  for yindex,line in self.keys[self.Shift] do
+    yk = 0
+    w = 11  -- width of Normal keys (a..z, 0..9, etc.)
+    ww = 25 -- width of Menu keys
+    w2 = 0  -- width of the control keys (Print, Del,etc.)
+    w3 = 0  -- only nr. 23 and so is shifted by extra 30 pixels
+    h = 8
+    for xindex,key in line do
+      
+      -- keeping the distance between the keyboard blocks --
+      if xindex > 22 then w3 = w3 + ww
+      elseif xindex > 21 then xoffs = 18
+        w2 = w2 + ww -- here comes the Menu :)
+      elseif xindex > 18 then xoffs = 13
+      elseif xindex > 15 then xoffs = 12
+
+      elseif xindex > 12 then xoffs = 11
+
+      elseif xindex > 9 then xoffs = 7
+      elseif xindex > 6 then xoffs = 2
+      elseif xindex > 3 then xoffs = 1
+      else 
+        xoffs = 0
+      end
+      -- printing a button of the keyboard --
+      x0 = xindex * w+w3 + 108 + xoffs
+      y0 = yindex * h + 237 
+      --drawRectM(x0, y0, w+w2, h, self.creme)
+
+      if yindex ==1 then   -- drawing a big rectangle
+  if xindex == 1 or xindex == 4 or xindex == 7 or xindex == 10 or xindex == 13 or xindex ==19 or xindex == 16 then
+    drawRectM(x0-w2, y0, 3*(w+w2), 3*h+2, self.creme)
+  end
+     end
+
+
+       -- if the first key has been pressed and we are printing the choosen character we highlight it--
+      if xindex == self.x and yindex == self.y and self.firstkey == 1 then
+        screen:fillRect(x0, y0+2, w+w2, h, self.blue2)
+        --self.foreground = self.red
+        drawRectM(x0-w-w2+1, y0-7, 3*(w+w2)-2, 3*h, self.creme)
+      else
+        self.foreground = self.creme
+      end
+      fgz = self.foreground  
+      
+      value = self.keys[self.Shift][yindex][xindex]
+      if value == "s" or value == "g" or value == "k" or value == "5" or value == "S" or value == "G" or value == "K" or value == "*" or value == "#" or value == "[" then
+        self.foreground = self.creme
+      else
+        self.foreground = fgz
+      end
+
+       -- PRINTING THE TEXT --
+      screen:print(x0+3, y0+2, key, self.foreground)
+          
+      if self.firstkey == 0 or self.firstkey == 2 then
+        -- screen:print(1 , 215, " 1. Press a button corresponding to one of the white chars:", foreground)
+        screen:print(119, 237, "  <   ^   >    v        A   \t", self.creme)
+                drawRectM(278, 237, 5, 5, self.creme)
+      else
+        -- screen:print(120 , 237, "Choose a char by moving Left etc.", foreground)
+      end    
+            
+    end -- yindex,line in keys do
+
+  -- eddig fosk -------------------------
+end
+
+
+end
+
+-------------------------------------------------------------------------------
+function Osk:Update()
+  local ret = nil
+
+ if Pad.tR1 then
+    if self.First then
+      self.First = false
+    else
+      return ret, false
+    end
+  end
+
+ local lh = Pad:GetHrep()
+ local lv = Pad:GetVrep()
+
+  ---- Switching the Caps Lock -----
+  if Pad.L1 then 
+    --if self.Shift == false then
+      self.Shift = true
+    else
+      self.Shift = false
+    --end
+  end
+
+  -- WRITE MODE - FIRST KEYPRESS --  
+  if self.firstkey == 0 or self.firstkey == 2 then
+    self.y = 2
+    
+    if Pad.tRl then  self.x = 14  self.firstkey = 1  end
+    if Pad.tRr then  self.x = 20  self.firstkey = 1  end
+    if Pad.tRu then  self.x = 17  self.firstkey = 1  end
+    if Pad.tRd then  ret = "\b"  end
+
+    if Pad.tLl then  self.x = 2  self.firstkey = 1  end
+    if Pad.tLr then  self.x = 8  self.firstkey = 1  end
+    if Pad.tLu then  self.x = 5  self.firstkey = 1  end
+    if Pad.tLd then  self.x = 11  self.firstkey = 1  end
+
+    -- Making a screenshot --
+    if Pad.tSl then screen:save("screenshot.png") end
+
+
+  -- WRITE MODE - 2nd KEYPRESS --
+  else
+    if Pad.tRl then  self.x = self.x - 1  self.y = self.y - 1  self.firstkey = 2  end
+    if Pad.tRr then  self.x = self.x + 1  self.y = self.y + 1  self.firstkey = 2  end
+    if Pad.tRu then  self.x = self.x + 1  self.y = self.y - 1  self.firstkey = 2  end
+    if Pad.tRd then self.x = self.x - 1   self.y = self.y + 1  self.firstkey = 2  end
+
+    if Pad.tLl then     self.x = self.x - 1  self.firstkey = 2 end
+    if Pad.tLr then     self.x = self.x + 1  self.firstkey = 2 end
+    if Pad.tLu then     self.y = self.y - 1  self.firstkey = 2 end
+    if Pad.tLd then     self.y = self.y + 1  self.firstkey = 2 end
+
+    -- choosing the character in the middle --
+    if Pad.tSl then  self.firstkey = 2  end
+
+  end  --  of self.firstkey
+
+  -- CHECK OF COORDINATE OVERFLOW --maybe not needed now .)
+  if self.y == 4 then self.y = 1 end
+  if self.y == 0 then self.y = 3 end
+  if self.x == 22 then self.x = 1 end
+  if self.x == 0 then self.x = 24 end
+
+    -- A KEY-KOMBINATION HAS BEEN SELECTED ?: 
+  if self.firstkey == 2 then
+    self.firstkey = 0
+    ret = self.keys[self.Shift][self.y][self.x]
+  end
+
+  return ret, true
+end
+
+-------------------------------------------------------------------------------
+function Osk:Help()
+end
